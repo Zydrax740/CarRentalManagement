@@ -65,6 +65,21 @@
 </div>
 
 @code {
+    private string userId = "System";
+    @inject AuthenticationStateProvider authenticationStateProvider
+
+    protected override async void OnInitialized()
+    {
+        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        // Get the userId claim
+        var userIdClaim = user.FindFirst("userId");
+        if (userIdClaim != null)
+        {
+            userId = userIdClaim.Value;
+        }
+    }
+
     [SupplyParameterFromForm]
     private Customer Customer { get; set; } = new();
 
@@ -72,6 +87,16 @@
     private async Task AddCustomer()
     {
         using var context = DbFactory.CreateDbContext();
+
+        //Set the userId to the CreatedBy and UpdatedBy fields.
+        Customer.CreatedBy = userId;
+        Customer.UpdatedBy = userId;
+
+        //Set the DateCreated and DateUpdated fields to the current date and time.
+
+        Customer.DateCreated = DateTime.Now;
+        Customer.DateUpdated = DateTime.Now;
+
         context.Customer.Add(Customer);
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/customers");
